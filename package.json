@@ -1,6 +1,6 @@
 {
   "name": "@andrewlabs/openclaw-messageguard-ml",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "OpenClaw plugin: ML-based secret detection and redaction for outgoing messages using transformers.js/ONNX.",
   "type": "module",
   "main": "./index.js",

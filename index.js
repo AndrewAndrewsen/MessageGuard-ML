@@ -1,6 +1,6 @@
 import { detectSecrets, redactContent } from "./classifier.js";
 const DEFAULT_MODEL_ID = "AndrewAndrewsen/distilbert-secret-masker";
-const DEFAULT_THRESHOLD = 0.5;
+const DEFAULT_THRESHOLD = 0.3;
 const DEFAULT_MASK = "[REDACTED]";
 const messageguardMlPlugin = {
     id: "messageguard-ml",
