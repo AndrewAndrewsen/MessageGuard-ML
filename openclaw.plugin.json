@@ -1,0 +1,50 @@
+{
+  "id": "messageguard-ml",
+  "name": "MessageGuard ML",
+  "description": "Uses a DistilBERT token-classification model to detect and redact secrets in outgoing messages.",
+  "version": "1.0.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "default": true
+      },
+      "modelId": {
+        "type": "string",
+        "default": "AndrewAndrewsen/distilbert-secret-masker"
+      },
+      "threshold": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "default": 0.5
+      },
+      "mask": {
+        "type": "string",
+        "default": "[REDACTED]"
+      }
+    }
+  },
+  "uiHints": {
+    "enabled": {
+      "label": "Enable MessageGuard ML",
+      "help": "When disabled, outgoing messages are not scanned by the ML classifier."
+    },
+    "modelId": {
+      "label": "Model ID",
+      "placeholder": "AndrewAndrewsen/distilbert-secret-masker",
+      "help": "Hugging Face model repo ID used for token classification."
+    },
+    "threshold": {
+      "label": "Detection threshold",
+      "help": "Only predictions at or above this confidence are redacted."
+    },
+    "mask": {
+      "label": "Redaction token",
+      "placeholder": "[REDACTED]",
+      "help": "Replacement text used for detected sensitive spans."
+    }
+  }
+}

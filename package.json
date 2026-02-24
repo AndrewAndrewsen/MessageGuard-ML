@@ -1,0 +1,61 @@
+{
+  "name": "@andrewlabs/openclaw-messageguard-ml",
+  "version": "1.0.0",
+  "description": "OpenClaw plugin: ML-based secret detection and redaction for outgoing messages using transformers.js/ONNX.",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "classifier.js",
+    "classifier.d.ts",
+    "types.js",
+    "types.d.ts",
+    "openclaw.plugin.json",
+    "README.md",
+    "scripts/export_onnx.py"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "openclaw",
+    "openclaw-plugin",
+    "messageguard",
+    "machine-learning",
+    "onnx",
+    "transformers"
+  ],
+  "author": "AndrewAndersen",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AndrewAndrewsen/MessageGuard-ML"
+  },
+  "homepage": "https://github.com/AndrewAndrewsen/MessageGuard-ML#readme",
+  "bugs": {
+    "url": "https://github.com/AndrewAndrewsen/MessageGuard-ML/issues"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.js"
+    ]
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.4.5"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.0.0"
+  },
+  "peerDependenciesMeta": {
+    "openclaw": {
+      "optional": true
+    }
+  }
+}
