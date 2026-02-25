@@ -50,9 +50,9 @@ const messageguardMlPlugin = {
         ctx: BeforeToolCallContext
       ): Promise<BeforeToolCallResult | void> => {
         if (event.toolName !== "message") return;
-        const params = event.params as Record<string, unknown>;
-        if (params?.action !== "send" && params?.action !== "broadcast") return;
-        const content = params?.message as string | undefined;
+        const params = event.params ?? {} as Record<string, unknown>;
+        if (params.action !== "send" && params.action !== "broadcast") return;
+        const content = String(params.message ?? params.text ?? params.content ?? "");
         if (!content) return;
 
         let spans;
@@ -75,7 +75,14 @@ const messageguardMlPlugin = {
         api.logger.warn(
           `MessageGuard ML: redacted ${spans.length} sensitive span(s) in message tool send to ${params.target} (channel: ${params.channel ?? "default"}).`
         );
-        return { params: { ...params, message: redacted } };
+        // Cover common param aliases so no schema variant is missed
+        return { params: {
+          ...params,
+          message: redacted,
+          text: redacted,
+          content: redacted,
+          caption: redacted,
+        } };
       },
       { priority: 100 }
     );

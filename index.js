@@ -24,10 +24,10 @@ const messageguardMlPlugin = {
         api.on("before_tool_call", async (event, ctx) => {
             if (event.toolName !== "message")
                 return;
-            const params = event.params;
-            if (params?.action !== "send" && params?.action !== "broadcast")
+            const params = event.params ?? {};
+            if (params.action !== "send" && params.action !== "broadcast")
                 return;
-            const content = params?.message;
+            const content = String(params.message ?? params.text ?? params.content ?? "");
             if (!content)
                 return;
             let spans;
@@ -44,7 +44,14 @@ const messageguardMlPlugin = {
             if (redacted === content)
                 return;
             api.logger.warn(`MessageGuard ML: redacted ${spans.length} sensitive span(s) in message tool send to ${params.target} (channel: ${params.channel ?? "default"}).`);
-            return { params: { ...params, message: redacted } };
+            // Cover common param aliases so no schema variant is missed
+            return { params: {
+                    ...params,
+                    message: redacted,
+                    text: redacted,
+                    content: redacted,
+                    caption: redacted,
+                } };
         }, { priority: 100 });
         // Hook 2: message_sending — intercept agent replies
         // Currently not fired for most outbound paths in 2026.2.x, but registered
