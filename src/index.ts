@@ -2,6 +2,9 @@ import type {
   MessageContext,
   MessageSendingEvent,
   MessageSendingResult,
+  BeforeToolCallEvent,
+  BeforeToolCallContext,
+  BeforeToolCallResult,
   OpenClawPluginApi,
 } from "./types.js";
 import { detectSecrets, redactContent } from "./classifier.js";
@@ -13,7 +16,7 @@ const DEFAULT_MASK = "[REDACTED]";
 const messageguardMlPlugin = {
   id: "messageguard-ml",
   name: "MessageGuard ML",
-  version: "1.0.0",
+  version: "1.1.1",
   description:
     "Uses DistilBERT token classification to detect and redact secret-like content in outgoing messages.",
 
@@ -37,10 +40,49 @@ const messageguardMlPlugin = {
         : DEFAULT_THRESHOLD;
     const mask = cfg.mask ?? DEFAULT_MASK;
 
-    api.logger.info(
-      `MessageGuard ML: registered message_sending hook (model: ${modelId}, threshold: ${threshold})`
+    // Hook 1: before_tool_call — intercept message tool sends
+    // This is the primary enforcement path since message_sending doesn't fire
+    // for tool sends or most channel replies in OpenClaw 2026.2.x
+    api.on(
+      "before_tool_call",
+      async (
+        event: BeforeToolCallEvent,
+        ctx: BeforeToolCallContext
+      ): Promise<BeforeToolCallResult | void> => {
+        if (event.toolName !== "message") return;
+        const params = event.params as Record<string, unknown>;
+        if (params?.action !== "send" && params?.action !== "broadcast") return;
+        const content = params?.message as string | undefined;
+        if (!content) return;
+
+        let spans;
+        try {
+          spans = await detectSecrets(content, { modelId, threshold });
+        } catch (err) {
+          api.logger.warn(
+            `MessageGuard ML: inference failed on tool send; passing through. ${
+              err instanceof Error ? err.message : String(err)
+            }`
+          );
+          return;
+        }
+
+        if (spans.length === 0) return;
+
+        const redacted = redactContent(content, spans, mask);
+        if (redacted === content) return;
+
+        api.logger.warn(
+          `MessageGuard ML: redacted ${spans.length} sensitive span(s) in message tool send to ${params.target} (channel: ${params.channel ?? "default"}).`
+        );
+        return { params: { ...params, message: redacted } };
+      },
+      { priority: 100 }
     );
 
+    // Hook 2: message_sending — intercept agent replies
+    // Currently not fired for most outbound paths in 2026.2.x, but registered
+    // so it will work when OpenClaw wires it up universally.
     api.on(
       "message_sending",
       async (
@@ -54,7 +96,7 @@ const messageguardMlPlugin = {
           spans = await detectSecrets(event.content, { modelId, threshold });
         } catch (err) {
           api.logger.warn(
-            `MessageGuard ML: model unavailable or inference failed; passing message through. ${
+            `MessageGuard ML: inference failed on reply; passing through. ${
               err instanceof Error ? err.message : String(err)
             }`
           );
@@ -67,12 +109,16 @@ const messageguardMlPlugin = {
         if (redacted === event.content) return;
 
         api.logger.warn(
-          `MessageGuard ML: redacted ${spans.length} sensitive span(s) in outgoing message to ${event.to} (channel: ${ctx.channelId}).`
+          `MessageGuard ML: redacted ${spans.length} sensitive span(s) in outgoing reply to ${event.to} (channel: ${ctx.channelId}).`
         );
 
         return { content: redacted };
       },
       { priority: 100 }
+    );
+
+    api.logger.info(
+      `MessageGuard ML: registered before_tool_call + message_sending hooks (model: ${modelId}, threshold: ${threshold})`
     );
   },
 };

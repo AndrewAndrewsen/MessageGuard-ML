@@ -27,6 +27,20 @@ export type MessageSendingResult = {
   cancel?: boolean;
 };
 
+export type BeforeToolCallEvent = {
+  toolName: string;
+  params: Record<string, unknown>;
+};
+
+export type BeforeToolCallContext = {
+  sessionKey?: string;
+};
+
+export type BeforeToolCallResult = {
+  params?: Record<string, unknown>;
+  block?: boolean;
+};
+
 export type OpenClawPluginApi = {
   id: string;
   name: string;
